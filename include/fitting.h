@@ -7,20 +7,19 @@
 #include "point.h"
 #include "segment.h"
 
-CSegment fitSegment(const std::vector<CPoint> &point_set)
+CSegment fitSegment(const std::vector<CPoint>& point_set)
 {
-
     int N = point_set.size();
     assert(N >= 2);
 
-    Eigen::MatrixXd input = Eigen::MatrixXd::Zero(N, 2);  // [x_i, y_i]
-    Eigen::MatrixXd output = Eigen::MatrixXd::Ones(N, 1); // [-C]
-    Eigen::MatrixXd params = Eigen::MatrixXd::Zero(2, 1); // [A ; B]
+    Eigen::MatrixXd input = Eigen::MatrixXd::Zero(N, 2);   // [x_i, y_i]
+    Eigen::MatrixXd output = Eigen::MatrixXd::Ones(N, 1);  // [-C]
+    Eigen::MatrixXd params = Eigen::MatrixXd::Zero(2, 1);  // [A ; B]
 
     for (int i = 0; i < N; ++i)
     {
-        input(i, 0) = point_set[i].x;
-        input(i, 1) = point_set[i].y;
+        input(i, 0) = point_set[i].m_dX;
+        input(i, 1) = point_set[i].m_dY;
     }
 
     params = input.colPivHouseholderQr().solve(output);
@@ -42,14 +41,14 @@ CSegment fitSegment(const std::vector<CPoint> &point_set)
     {
         CPoint projected_p1, projected_p2;
 
-        projected_p1.x = (B * B * p1.x - A * B * p1.y - A * C) / D;
-        projected_p1.y = (-A * B * p1.x + A * A * p1.y - B * C) / D;
+        projected_p1.m_dX = (B * B * p1.m_dX - A * B * p1.m_dY - A * C) / D;
+        projected_p1.m_dY = (-A * B * p1.m_dX + A * A * p1.m_dY - B * C) / D;
 
-        projected_p2.x = (B * B * p2.x - A * B * p2.y - A * C) / D;
-        projected_p2.y = (-A * B * p2.x + A * A * p2.y - B * C) / D;
+        projected_p2.m_dX = (B * B * p2.m_dX - A * B * p2.m_dY - A * C) / D;
+        projected_p2.m_dY = (-A * B * p2.m_dX + A * A * p2.m_dY - B * C) / D;
 
-        iSegment.first_point = projected_p1;
-        iSegment.last_point = projected_p2;
+        iSegment.m_iSeg_first_point = projected_p1;
+        iSegment.m_iSeg_last_point = projected_p2;
     }
 
     return iSegment;
@@ -64,23 +63,23 @@ CSegment fitSegment(const std::vector<CPoint> &point_set)
  * circle equation
  *   (x-x0)^2 + (y-y0)^2 = r^2.
  */
-CCircle fitCircle(const std::vector<CPoint> &point_set)
+CCircle fitCircle(const std::vector<CPoint>& point_set)
 {
     int N = point_set.size();
     assert(N >= 3);
 
-    Eigen::MatrixXd input = Eigen::MatrixXd::Zero(N, 3);  // [x_i, y_i, 1]
-    Eigen::MatrixXd output = Eigen::MatrixXd::Ones(N, 1); // [-(x_i^2 + y_i^2)]
-    Eigen::MatrixXd params = Eigen::MatrixXd::Zero(2, 1); // [a_1 ; a_2 ; a_3]
+    Eigen::MatrixXd input = Eigen::MatrixXd::Zero(N, 3);   // [x_i, y_i, 1]
+    Eigen::MatrixXd output = Eigen::MatrixXd::Ones(N, 1);  // [-(x_i^2 + y_i^2)]
+    Eigen::MatrixXd params = Eigen::MatrixXd::Zero(2, 1);  // [a_1 ; a_2 ; a_3]
 
     int i = 0;
-    for (const CPoint &point : point_set)
+    for (const CPoint& point : point_set)
     {
-        input(i, 0) = point.x;
-        input(i, 1) = point.y;
+        input(i, 0) = point.m_dX;
+        input(i, 1) = point.m_dY;
         input(i, 2) = 1.0;
 
-        output(i) = -(pow(point.x, 2) + pow(point.y, 2));
+        output(i) = -(pow(point.m_dX, 2) + pow(point.m_dY, 2));
         i++;
     }
 

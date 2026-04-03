@@ -1,39 +1,30 @@
-
 #ifndef CORRIDOR_H
 #define CORRIDOR_H
 
 #include <vector>
-#include "hyperplain.h"
-#include "circle.h"
 
-using namespace std;
+#include "hyperplain.h"
 
 class CCorridor
 {
-public:
-    CCorridor()
+  public:
+    CCorridor() {}
+    CCorridor(const std::vector<CPoint>& viPointSet)
     {
-    }
-    CCorridor(std::vector<CPoint> vPointSet)
-    {
-        CPoint iCenter=(vPointSet[0]+vPointSet[1]+vPointSet[2])/3;
-        for(int i=0; i<(int)vPointSet.size()-1; i++)
+        CPoint iCenter = (viPointSet[0] + viPointSet[1] + viPointSet[2]) / 3;
+        for (size_t i = 0; i < viPointSet.size() - 1; ++i)
         {
-            this->addHyperPlain(CHyperPlain(vPointSet[i],vPointSet[i+1],iCenter));
+            this->addHyperPlain(CHyperPlain(viPointSet[i], viPointSet[i + 1], iCenter));
         }
-        this->addHyperPlain(CHyperPlain(vPointSet.back(),vPointSet[0],iCenter));
-
+        this->addHyperPlain(CHyperPlain(viPointSet.back(), viPointSet[0], iCenter));
     }
-    void addHyperPlain(CHyperPlain plain)
-    {
-        vHyperPlain.push_back(plain);
-    }
+    void addHyperPlain(const CHyperPlain& iPlain) { m_viHyperPlain.push_back(iPlain); }
 
-    bool isinCorridor(CPoint p)
+    bool isinCorridor(CPoint iPoint)
     {
-        for (CHyperPlain plain : vHyperPlain)
+        for (CHyperPlain iPlain : m_viHyperPlain)
         {
-            if (!plain.SideCheck(p))
+            if (!iPlain.SideCheck(iPoint))
             {
                 return false;
             }
@@ -41,23 +32,28 @@ public:
         return true;
     }
 
-    void Expand(double expand_distance)
+    void Expand(const double dExpand_distance)
     {
-        for (CHyperPlain &plain : vHyperPlain)
+        for (CHyperPlain& iPlain : m_viHyperPlain)
         {
-            plain.first_point -= plain.normal_vector * expand_distance;
-            plain.last_point -= plain.normal_vector * expand_distance;
+            iPlain.m_iHP_first_point -= iPlain.m_iNormal_vector * dExpand_distance;
+            iPlain.m_iHP_last_point -= iPlain.m_iNormal_vector * dExpand_distance;
         }
-        for (int i = 0; i < (int)vHyperPlain.size() - 1; i++)
+        for (size_t i = 0; i < m_viHyperPlain.size() - 1; ++i)
         {
-            vHyperPlain[i].last_point = CSegment(vHyperPlain[i].first_point, vHyperPlain[i].last_point).IntersectionWith(CSegment(vHyperPlain[i + 1].first_point, vHyperPlain[i + 1].last_point));
-            vHyperPlain[i + 1].first_point = vHyperPlain[i].last_point;
+            m_viHyperPlain[i].m_iHP_last_point =
+                CSegment(m_viHyperPlain[i].m_iHP_first_point, m_viHyperPlain[i].m_iHP_last_point)
+                    .IntersectionWith(
+                        CSegment(m_viHyperPlain[i + 1].m_iHP_first_point, m_viHyperPlain[i + 1].m_iHP_last_point));
+            m_viHyperPlain[i + 1].m_iHP_first_point = m_viHyperPlain[i].m_iHP_last_point;
         }
-        vHyperPlain.back().last_point = CSegment(vHyperPlain.back().first_point, vHyperPlain.back().last_point).IntersectionWith(CSegment(vHyperPlain[0].first_point, vHyperPlain[0].last_point));
-        vHyperPlain[0].first_point = vHyperPlain.back().last_point;
+        m_viHyperPlain.back().m_iHP_last_point =
+            CSegment(m_viHyperPlain.back().m_iHP_first_point, m_viHyperPlain.back().m_iHP_last_point)
+                .IntersectionWith(CSegment(m_viHyperPlain[0].m_iHP_first_point, m_viHyperPlain[0].m_iHP_last_point));
+        m_viHyperPlain[0].m_iHP_first_point = m_viHyperPlain.back().m_iHP_last_point;
     }
 
-    std::vector<CHyperPlain> vHyperPlain;
+    std::vector<CHyperPlain> m_viHyperPlain;
 };
 
 #endif

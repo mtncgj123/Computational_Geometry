@@ -1,121 +1,243 @@
 #ifndef SEGMENT_H
 #define SEGMENT_H
 
-#include <vector>
-#include "point.h"
+#include <algorithm>
 
-using namespace std;
+#include "point.h"
 
 class CSegment
 {
-public:
-  CSegment(const CPoint& p1 = CPoint(), const CPoint& p2 = CPoint()) {
-    // Swap if not counter-clockwise
-    if (p1.cross(p2) > 0.0)
-      first_point = p1, last_point = p2;
-    else
-      first_point = p2, last_point = p1;
-  }
+    static const double EPSILON;
+    static const double EPSILON_ANGLE_DIFF;
 
-  double length() const {
-    return (last_point - first_point).length();
-  }
-
-  double lengthSquared() const {
-    return (last_point - first_point).lengthSquared();
-  }
-
-  double dot(const CSegment& seg) const 
-  {
-    return (last_point - first_point).dot(seg.last_point - seg.first_point);
-  }
-
-  CPoint normal() const {
-    return (last_point - first_point).perpendicular().normalized();
-  }
-
-  CPoint projection(const CPoint& p) const {
-    CPoint a = last_point - first_point;
-    CPoint b = p - first_point;
-    return first_point + a.dot(b) * a / a.lengthSquared();
-  }
-
-  CPoint trueProjection(const CPoint& p) const {
-    CPoint a = last_point - first_point;
-    CPoint b = p - first_point;
-
-    double t = a.dot(b) / a.lengthSquared();
-
-    if (t < 0.0)
-      return (first_point);
-    else if (t > 1.0)
-      return (last_point);
-    else
-      return first_point + a.dot(b) * a / a.lengthSquared();
-  }
-
-  CPoint IntersectionWith(const CSegment& segment) const 
-  {
-    CPoint v1 = last_point - first_point;
-    CPoint v2 = segment.last_point - segment.first_point;
-    if(abs(v1.cross(v2)) < 1e-3)
+  public:
+    CSegment(const CPoint& iPoint1 = CPoint(), const CPoint& iPoint2 = CPoint())
     {
-      std::cout<<"`Parallel"<<endl;
+        // Swap if not counter-clockwise
+        if (iPoint1.cross(iPoint2) > 0.0)
+        {
+            m_iSeg_first_point = iPoint1;
+            m_iSeg_last_point = iPoint2;
+        }
+        else
+        {
+            m_iSeg_first_point = iPoint2;
+            m_iSeg_last_point = iPoint1;
+        }
     }
 
-    double t=(segment.first_point-this->first_point).cross(v2)/(v1.cross(v2));
+    double length() const { return (m_iSeg_last_point - m_iSeg_first_point).length(); }
 
-    return first_point + t*v1;
-  }
+    double lengthSquared() const { return (m_iSeg_last_point - m_iSeg_first_point).lengthSquared(); }
 
-  double distanceTo(const CPoint& p) const {
-    return (p - projection(p)).length();
-  }
+    CPoint normal() const { return (m_iSeg_last_point - m_iSeg_first_point).perpendicular().normalized(); }
 
-  double trueDistanceTo(const CSegment& seg)
-  {
-    CPoint p1=this->first_point;
-    CPoint p2=this->last_point;
-    CPoint q1=seg.first_point;
-    CPoint q2=seg.last_point;
-    CPoint s1=p2-p1;
-    CPoint s2=q2-q1;
-    double k1=(s1.dot(s2)*((p1-q1).dot(s2))-s2.lengthSquared()*(p1-q1).dot(s1))/(s1.lengthSquared()*s2.lengthSquared()-pow(s1.dot(s2),2.0));
-    double k2=-(s1.dot(s2)*((p1-q1).dot(s1))-s1.lengthSquared()*(p1-q1).dot(s2))/(s1.lengthSquared()*s2.lengthSquared()-pow(s1.dot(s2),2.0));
-    if(k1>=0&&k1<=1&&k2>=0&&k2<=1)
+    /**
+     * @brief 计算点到线段的投影点
+     *
+     * @param iPoint_p
+     * @return CPoint
+     */
+    CPoint projection(const CPoint& iPoint_p) const
     {
-        return (p1+k1*s1-q1-k2*s2).length();
+        CPoint iPoint_a = m_iSeg_last_point - m_iSeg_first_point;
+        CPoint iPoint_b = iPoint_p - m_iSeg_first_point;
+        return m_iSeg_first_point + iPoint_a.dot(iPoint_b) * iPoint_a / iPoint_a.lengthSquared();
     }
-    else
+
+    /**
+     * @brief 计算点到线段的最近的点
+     *
+     * @param iPoint_p 点
+     * @return CPoint 最近的点
+     */
+    CPoint trueProjection(const CPoint& iPoint_p) const
     {
-      return min({this->trueDistanceTo(seg.first_point),this->trueDistanceTo(seg.last_point),seg.trueDistanceTo(this->first_point),seg.trueDistanceTo(this->last_point)});
+        CPoint iPoint_a = m_iSeg_last_point - m_iSeg_first_point;
+        CPoint iPoint_b = iPoint_p - m_iSeg_first_point;
+
+        double dProjectLength = iPoint_a.dot(iPoint_b) / iPoint_a.lengthSquared();
+
+        if (dProjectLength < 0.0)
+        {
+            return (m_iSeg_first_point);
+        }
+        else if (dProjectLength > 1.0)
+        {
+            return (m_iSeg_last_point);
+        }
+        else
+        {
+            return m_iSeg_first_point + iPoint_a.dot(iPoint_b) * iPoint_a / iPoint_a.lengthSquared();
+        }
     }
-  }
 
-  double trueDistanceTo(const CPoint& p) const {
-    CPoint a = last_point - first_point;
-    CPoint b = p - first_point;
-    CPoint c = p - last_point;
+    /**
+     * @brief 计算点到线段的垂直距离
+     *
+     * @param iPoint_p 点
+     * @return double
+     */
+    double distanceTo(const CPoint& iPoint_p) const { return (iPoint_p - projection(iPoint_p)).length(); }
 
-    double t = a.dot(b) / a.lengthSquared();
+    /**
+     * @brief 判断两条线段是否平行
+     *
+     * @param iSeg 除自身外的另外一条线段
+     * @return true
+     * @return false
+     */
+    bool IsParallel(const CSegment& iSeg) const
+    {
+        CPoint iDir1 = m_iSeg_last_point - m_iSeg_first_point;
+        CPoint iDir2 = iSeg.m_iSeg_last_point - iSeg.m_iSeg_first_point;
+        return (fabs(iDir1.cross(iDir2) / iDir1.length() / iDir2.length()) < EPSILON_ANGLE_DIFF);
+    }
 
-    if (t < 0.0)
-      return b.length();
-    else if (t > 1.0)
-      return c.length();
+    /**
+     * @brief 计算线段和线段的距离
+     *
+     * @param iSeg 除自身外的另外一条线段
+     * @return double 线段和线段距离
+     */
+    double trueDistanceTo(const CSegment& iSeg) const
+    {
+        CPoint p1 = this->m_iSeg_first_point;
+        CPoint p2 = this->m_iSeg_last_point;
+        CPoint q1 = iSeg.m_iSeg_first_point;
+        CPoint q2 = iSeg.m_iSeg_last_point;
+        CPoint s1 = p2 - p1;
+        CPoint s2 = q2 - q1;
+        double k1 = (s1.dot(s2) * ((p1 - q1).dot(s2)) - s2.lengthSquared() * (p1 - q1).dot(s1)) /
+                    (s1.lengthSquared() * s2.lengthSquared() - pow(s1.dot(s2), 2.0));
+        double k2 = -(s1.dot(s2) * ((p1 - q1).dot(s1)) - s1.lengthSquared() * (p1 - q1).dot(s2)) /
+                    (s1.lengthSquared() * s2.lengthSquared() - pow(s1.dot(s2), 2.0));
+        if (k1 >= 0 && k1 <= 1 && k2 >= 0 && k2 <= 1)
+        {
+            return (p1 + k1 * s1 - q1 - k2 * s2).length();
+        }
+        else
+        {
+            return std::min(
+                {this->trueDistanceTo(iSeg.m_iSeg_first_point), this->trueDistanceTo(iSeg.m_iSeg_last_point),
+                 iSeg.trueDistanceTo(this->m_iSeg_first_point), iSeg.trueDistanceTo(this->m_iSeg_last_point)});
+        }
+    }
 
-    CPoint projection = first_point + t * a;
-    return (p - projection).length();
-  }
+    /**
+     * @brief 计算点到线段的实际距离
+     * 如果点距离线段左边点近，返回距离左边端点的距离，如果点距离线段右边近，返回距离右边端点的，如果点在线段中间，返回垂直距离
+     *
+     * @param iPoint_p 某个点
+     * @return double 点到线段的实际距离
+     */
+    double trueDistanceTo(const CPoint& iPoint_p) const
+    {
+        CPoint iPoint_a = m_iSeg_last_point - m_iSeg_first_point;
+        CPoint iPoint_b = iPoint_p - m_iSeg_first_point;
+        CPoint iPoint_c = iPoint_p - m_iSeg_last_point;
 
+        double dProjectLength = iPoint_a.dot(iPoint_b) / iPoint_a.lengthSquared();
 
-  friend std::ostream& operator<<(std::ostream& out, const CSegment& s) {
-    out << "p1: " << s.first_point << ", p2: " << s.last_point;
-    return out;
-  }
+        if (dProjectLength < 0.0)
+        {
+            return iPoint_b.length();
+        }
+        else if (dProjectLength > 1.0)
+        {
+            return iPoint_c.length();
+        }
 
-  CPoint first_point;
-  CPoint last_point;
+        CPoint projection = m_iSeg_first_point + dProjectLength * iPoint_a;
+        return (iPoint_p - projection).length();
+    }
+
+    /**
+     * @brief 计算线段与线段的交点
+     *
+     * @param iSegment 除自身外的另外一个线段
+     * @return CPoint 线段与线段的交点
+     */
+    CPoint IntersectionWith(const CSegment& iSegment) const
+    {
+        CPoint iPoint_v1 = m_iSeg_last_point - m_iSeg_first_point;
+        CPoint iPoint_v2 = iSegment.m_iSeg_last_point - iSegment.m_iSeg_first_point;
+        if (fabs(iPoint_v1.cross(iPoint_v2)) < 1e-3)
+        {
+            std::cout << "Intersection with Parallel!!!" << std::endl;
+        }
+
+        double dT =
+            (iSegment.m_iSeg_first_point - this->m_iSeg_first_point).cross(iPoint_v2) / (iPoint_v1.cross(iPoint_v2));
+
+        return m_iSeg_first_point + dT * iPoint_v1;
+    }
+
+    /**
+     * @brief 判断两条线段是否可以merge,并且返回合并后的线段
+     * 两条线段可以merge的条件是 1.共线 2.有交点
+     *
+     * @param iCandidateSeg 自身之外的其他线段
+     * @param iMergedSeg 合并后的线段
+     * @return true
+     * @return false
+     */
+    bool Merge(const CSegment& iCandidateSeg, CSegment& iMergedSeg) const
+    {
+        if ((false == IsParallel(iCandidateSeg)) || (trueDistanceTo(iCandidateSeg) > EPSILON))
+        {
+            return false;
+        }
+        else
+        {
+            CPoint iPoint_dir1 = m_iSeg_last_point - m_iSeg_first_point;
+            CPoint iPoint_dir1_start = iCandidateSeg.m_iSeg_first_point - m_iSeg_first_point;
+            CPoint iPoint_dir1_end = iCandidateSeg.m_iSeg_last_point - m_iSeg_first_point;
+            double dDot1 = iPoint_dir1.dot(iPoint_dir1);
+            double dDot1_start = iPoint_dir1.dot(iPoint_dir1_start);
+            double dDot1_end = iPoint_dir1.dot(iPoint_dir1_end);
+
+            if ((dDot1 >= dDot1_start) && (dDot1 >= dDot1_end))
+            {
+                iMergedSeg.m_iSeg_last_point = m_iSeg_last_point;
+            }
+            else if ((dDot1_start >= dDot1) && (dDot1_start >= dDot1_end))
+            {
+                iMergedSeg.m_iSeg_last_point = iCandidateSeg.m_iSeg_first_point;
+            }
+            else
+            {
+                iMergedSeg.m_iSeg_last_point = iCandidateSeg.m_iSeg_last_point;
+            }
+
+            CPoint iPoint_dir2 = -iPoint_dir1;
+            CPoint iPoint_dir2_start = iCandidateSeg.m_iSeg_first_point - m_iSeg_last_point;
+            CPoint iPoint_dir2_end = iCandidateSeg.m_iSeg_last_point - m_iSeg_last_point;
+            double dDot2 = dDot1;
+            double dDot2_start = iPoint_dir2.dot(iPoint_dir2_start);
+            double dDot2_end = iPoint_dir2.dot(iPoint_dir2_end);
+
+            if ((dDot2 >= dDot2_start) && (dDot2 >= dDot2_end))
+            {
+                iMergedSeg.m_iSeg_first_point = m_iSeg_first_point;
+            }
+            else if ((dDot2_start >= dDot2) && (dDot2_start >= dDot2_end))
+            {
+                iMergedSeg.m_iSeg_first_point = iCandidateSeg.m_iSeg_first_point;
+            }
+            else
+            {
+                iMergedSeg.m_iSeg_last_point = iCandidateSeg.m_iSeg_last_point;
+            }
+            return true;
+        }
+    }
+
+    CPoint m_iSeg_first_point;
+    CPoint m_iSeg_last_point;
 };
 
-#endif 
+const double CSegment::EPSILON = 1e-2;
+const double CSegment::EPSILON_ANGLE_DIFF = 1e-1;
+
+#endif
