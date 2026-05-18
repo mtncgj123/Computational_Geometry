@@ -7,8 +7,8 @@
 
 class CSegment
 {
-    static const double EPSILON;
-    static const double EPSILON_ANGLE_DIFF;
+    static constexpr double EPSILON = 1e-2;
+    static constexpr double EPSILON_ANGLE_DIFF = 1e-1;
 
   public:
     CSegment(const CPoint& iPoint1 = CPoint(), const CPoint& iPoint2 = CPoint())
@@ -108,11 +108,10 @@ class CSegment
         CPoint q2 = iSeg.m_iSeg_last_point;
         CPoint s1 = p2 - p1;
         CPoint s2 = q2 - q1;
-        double k1 = (s1.dot(s2) * ((p1 - q1).dot(s2)) - s2.lengthSquared() * (p1 - q1).dot(s1)) /
-                    (s1.lengthSquared() * s2.lengthSquared() - pow(s1.dot(s2), 2.0));
-        double k2 = -(s1.dot(s2) * ((p1 - q1).dot(s1)) - s1.lengthSquared() * (p1 - q1).dot(s2)) /
-                    (s1.lengthSquared() * s2.lengthSquared() - pow(s1.dot(s2), 2.0));
-        if (k1 >= 0 && k1 <= 1 && k2 >= 0 && k2 <= 1)
+        double dDenominator = (s1.lengthSquared() * s2.lengthSquared() - pow(s1.dot(s2), 2.0));
+        double k1 = (s1.dot(s2) * ((p1 - q1).dot(s2)) - s2.lengthSquared() * (p1 - q1).dot(s1)) / dDenominator;
+        double k2 = -(s1.dot(s2) * ((p1 - q1).dot(s1)) - s1.lengthSquared() * (p1 - q1).dot(s2)) / dDenominator;
+        if ((fabs(dDenominator) > EPSILON) && (k1 >= 0) && (k1 <= 1) && (k2 >= 0) && (k2 <= 1))
         {
             return (p1 + k1 * s1 - q1 - k2 * s2).length();
         }
@@ -236,8 +235,5 @@ class CSegment
     CPoint m_iSeg_first_point;
     CPoint m_iSeg_last_point;
 };
-
-const double CSegment::EPSILON = 1e-2;
-const double CSegment::EPSILON_ANGLE_DIFF = 1e-1;
 
 #endif
