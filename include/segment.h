@@ -157,19 +157,31 @@ class CSegment
      * @param iSegment 除自身外的另外一个线段
      * @return CPoint 线段与线段的交点
      */
-    CPoint IntersectionWith(const CSegment& iSegment) const
+    bool IntersectionWith(const CSegment& iSegment, CPoint& iIntersectionPoint) const
     {
         CPoint iPoint_v1 = m_iSeg_last_point - m_iSeg_first_point;
         CPoint iPoint_v2 = iSegment.m_iSeg_last_point - iSegment.m_iSeg_first_point;
-        if (fabs(iPoint_v1.cross(iPoint_v2)) < 1e-3)
+        CPoint iP2_minus_P1 = iSegment.m_iSeg_first_point - this->m_iSeg_first_point;
+        double dCross = iPoint_v1.cross(iPoint_v2);
+        if (fabs(dCross) < 1e-3)
         {
             std::cout << "Intersection with Parallel!!!" << std::endl;
+            return false;
         }
-
-        double dT =
-            (iSegment.m_iSeg_first_point - this->m_iSeg_first_point).cross(iPoint_v2) / (iPoint_v1.cross(iPoint_v2));
-
-        return m_iSeg_first_point + dT * iPoint_v1;
+        else
+        {
+            double dT1 = iP2_minus_P1.cross(iPoint_v2) / (dCross);
+            double dT2 = iP2_minus_P1.cross(iPoint_v1) / (dCross);
+            if (0 <= dT1 && dT1 <= 1 && 0 <= dT2 && dT2 <= 1)
+            {
+                iIntersectionPoint = m_iSeg_first_point + dT1 * iPoint_v1;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
     /**
