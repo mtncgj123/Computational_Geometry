@@ -41,15 +41,20 @@ class CCorridor
         }
         for (size_t i = 0; i < m_viHyperPlain.size() - 1; ++i)
         {
-            m_viHyperPlain[i].m_iHP_last_point =
-                CSegment(m_viHyperPlain[i].m_iHP_first_point, m_viHyperPlain[i].m_iHP_last_point)
-                    .IntersectionWith(
-                        CSegment(m_viHyperPlain[i + 1].m_iHP_first_point, m_viHyperPlain[i + 1].m_iHP_last_point));
+            CPoint iIntersectionPoint;
+            bool bIsIntersection = CSegment(m_viHyperPlain[i].m_iHP_first_point, m_viHyperPlain[i].m_iHP_last_point)
+                                       .IntersectionWith(CSegment(m_viHyperPlain[i + 1].m_iHP_first_point,
+                                                                  m_viHyperPlain[i + 1].m_iHP_last_point),
+                                                         iIntersectionPoint);
+            m_viHyperPlain[i].m_iHP_last_point = iIntersectionPoint;
             m_viHyperPlain[i + 1].m_iHP_first_point = m_viHyperPlain[i].m_iHP_last_point;
         }
-        m_viHyperPlain.back().m_iHP_last_point =
+        CPoint iIntersectionPoint;
+        bool bIsIntersection =
             CSegment(m_viHyperPlain.back().m_iHP_first_point, m_viHyperPlain.back().m_iHP_last_point)
-                .IntersectionWith(CSegment(m_viHyperPlain[0].m_iHP_first_point, m_viHyperPlain[0].m_iHP_last_point));
+                .IntersectionWith(CSegment(m_viHyperPlain[0].m_iHP_first_point, m_viHyperPlain[0].m_iHP_last_point),
+                                  iIntersectionPoint);
+        m_viHyperPlain.back().m_iHP_last_point = iIntersectionPoint;
         m_viHyperPlain[0].m_iHP_first_point = m_viHyperPlain.back().m_iHP_last_point;
     }
 

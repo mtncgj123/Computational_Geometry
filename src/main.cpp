@@ -70,14 +70,11 @@ int main()
     //        fittingCircle.radius);
 
     /*segment dist check*/
-    CSegment iSeg1(CPoint(95.848, 94.049), CPoint(22.195, 94.104));
-    CSegment iSeg2(CPoint(97.773, 94.080), CPoint(95.848, 94.049));
-    double dDist = iSeg1.trueDistanceTo(iSeg2);
-    CSegment iMergedSeg;
-    bool bIsMergable = iSeg1.Merge(iSeg2, iMergedSeg);
-    std::cout << bIsMergable << std::endl;
-    std::cout << "is parallel:" << iSeg1.IsParallel(iSeg2) << std::endl;
-    std::cout << "dist:" << dDist << std::endl;
-    std::cout << "Start point:" << iMergedSeg.m_iSeg_first_point << std::endl;
-    std::cout << "end point:" << iMergedSeg.m_iSeg_last_point << std::endl;
+    CSegment iSeg1(CPoint(59.271, 47.590), CPoint(59.273, 53.590));
+    CSegment iSeg2(CPoint(59.358, 52.810), CPoint(58.274, 52.812));
+    CPoint iIntersectionPoint;
+    bool bIsIntersection = iSeg1.IntersectionWith(iSeg2, iIntersectionPoint);
+    std::cout << bIsIntersection << std::endl;
+    std::cout << "x:" << iIntersectionPoint.m_dX << std::endl;
+    std::cout << "y:" << iIntersectionPoint.m_dY << std::endl;
 }
